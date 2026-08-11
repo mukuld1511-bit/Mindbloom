@@ -1,308 +1,285 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useMemo } from 'react';
 import { KnowledgeGraphData, GraphNode, GraphEdge } from '../types';
-import { Search, Info, ZoomIn, ZoomOut, RefreshCw, Network, Layers, GitBranch } from 'lucide-react';
+import { Network, Search, Filter, Compass, ArrowRight, Info, Layers } from 'lucide-react';
 
-export const KnowledgeGraphView: React.FC = () => {
-  const [graphData, setGraphData] = useState<KnowledgeGraphData | null>(null);
+interface KnowledgeGraphViewProps {
+  graphData: KnowledgeGraphData | null;
+  onRefresh: () => void;
+}
+
+export const KnowledgeGraphView: React.FC<KnowledgeGraphViewProps> = ({ graphData, onRefresh }) => {
   const [selectedNode, setSelectedNode] = useState<GraphNode | null>(null);
-  const [nodeContext, setNodeContext] = useState<{ neighbors: GraphNode[]; relationships: GraphEdge[] } | null>(null);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [isLoading, setIsLoading] = useState(true);
-  const [zoomLevel, setZoomLevel] = useState(1);
-  const svgRef = useRef<SVGSVGElement | null>(null);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [typeFilter, setTypeFilter] = useState<string>('ALL');
+  const [pathSource, setPathSource] = useState<string>('');
+  const [pathTarget, setPathTarget] = useState<string>('');
+  const [pathResult, setPathResult] = useState<string[]>([]);
 
-  const fetchGraph = async () => {
-    setIsLoading(true);
-    try {
-      const res = await fetch('/api/knowledge-graph');
-      const data = await res.json();
-      setGraphData(data);
-      if (data.nodes && data.nodes.length > 0 && !selectedNode) {
-        handleNodeClick(data.nodes[0]);
+  const nodes = graphData?.nodes || [];
+  const edges = graphData?.edges || [];
+
+  const entityTypes = useMemo(() => {
+    const types = new Set<string>();
+    nodes.forEach(n => types.add(n.type));
+    return Array.from(types);
+  }, [nodes]);
+
+  const filteredNodes = useMemo(() => {
+    return nodes.filter(n => {
+      const matchesSearch = n.label.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                            n.context.toLowerCase().includes(searchQuery.toLowerCase());
+      const matchesType = typeFilter === 'ALL' || n.type === typeFilter;
+      return matchesSearch && matchesType;
+    });
+  }, [nodes, searchQuery, typeFilter]);
+
+  const relatedEdges = useMemo(() => {
+    if (!selectedNode) return [];
+    return edges.filter(e => e.source === selectedNode.id || e.target === selectedNode.id);
+  }, [edges, selectedNode]);
+
+  const handleFindPath = () => {
+    if (!pathSource || !pathTarget || pathSource === pathTarget) return;
+
+    // Simple BFS shortest path solver on graphData
+    const adj = new Map<string, string[]>();
+    edges.forEach(e => {
+      if (!adj.has(e.source)) adj.set(e.source, []);
+      adj.get(e.source)!.push(e.target);
+    });
+
+    const queue: string[][] = [[pathSource]];
+    const visited = new Set<string>([pathSource]);
+
+    while (queue.length > 0) {
+      const path = queue.shift()!;
+      const curr = path[path.length - 1];
+
+      if (curr === pathTarget) {
+        setPathResult(path);
+        return;
       }
-    } catch (err) {
-      console.error('Failed to load knowledge graph:', err);
-    } finally {
-      setIsLoading(false);
+
+      const neighbors = adj.get(curr) || [];
+      for (const nextNode of neighbors) {
+        if (!visited.has(nextNode)) {
+          visited.add(nextNode);
+          queue.push([...path, nextNode]);
+        }
+      }
+    }
+
+    setPathResult([]);
+  };
+
+  const getTypeBadgeColor = (type: string) => {
+    switch (type.toUpperCase()) {
+      case 'PRINCIPLE': return 'bg-[#EBF2EC] text-[#3D5A45] border-[#D2E2D5]';
+      case 'METHOD': return 'bg-[#E8F1F5] text-[#2C5282] border-[#C3D9E8]';
+      case 'TOPIC': return 'bg-[#F2EFE9] text-[#744210] border-[#E2D9CC]';
+      case 'RESULT': return 'bg-[#F3E8EE] text-[#702459] border-[#E8CCD8]';
+      default: return 'bg-[#F3F2EE] text-[#4A4943] border-[#E4E1D8]';
     }
   };
-
-  useEffect(() => {
-    fetchGraph();
-  }, []);
-
-  const handleNodeClick = async (node: GraphNode) => {
-    setSelectedNode(node);
-    try {
-      const res = await fetch(`/api/entity/${encodeURIComponent(node.name)}`);
-      const data = await res.json();
-      setNodeContext({
-        neighbors: data.neighbors || [],
-        relationships: data.relationships || []
-      });
-    } catch (err) {
-      console.error('Failed to load entity context:', err);
-    }
-  };
-
-  const entityTypeColors: Record<string, { bg: string; text: string; fill: string; stroke: string }> = {
-    PERSON: { bg: 'bg-[#8A7E6B]/10', text: 'text-[#8A7E6B]', fill: '#8A7E6B', stroke: '#1C1B19' },
-    ORG: { bg: 'bg-[#8A7E6B]/10', text: 'text-[#8A7E6B]', fill: '#8A7E6B', stroke: '#1C1B19' },
-    PRODUCT: { bg: 'bg-[#6B6A63]/10', text: 'text-[#6B6A63]', fill: '#6B6A63', stroke: '#1C1B19' },
-    CONCEPT: { bg: 'bg-[#3D5A45]/10', text: 'text-[#3D5A45]', fill: '#3D5A45', stroke: '#1C1B19' },
-    LOCATION: { bg: 'bg-[#6B6A63]/10', text: 'text-[#6B6A63]', fill: '#6B6A63', stroke: '#1C1B19' },
-    DATE: { bg: 'bg-[#6B6A63]/10', text: 'text-[#6B6A63]', fill: '#6B6A63', stroke: '#1C1B19' },
-    TOPIC: { bg: 'bg-[#1C1B19]/10', text: 'text-[#1C1B19]', fill: '#1C1B19', stroke: '#3D5A45' },
-    PRINCIPLE: { bg: 'bg-[#3D5A45]/10', text: 'text-[#3D5A45]', fill: '#3D5A45', stroke: '#1C1B19' },
-    METHOD: { bg: 'bg-[#1C1B19]/10', text: 'text-[#1C1B19]', fill: '#1C1B19', stroke: '#3D5A45' },
-    RESULT: { bg: 'bg-[#6B6A63]/10', text: 'text-[#6B6A63]', fill: '#6B6A63', stroke: '#1C1B19' }
-  };
-
-  const filteredNodes = graphData?.nodes.filter((n) =>
-    n.name.toLowerCase().includes(searchTerm.toLowerCase())
-  ) || [];
 
   return (
     <div className="space-y-6">
-      {/* Header & Stats Bar */}
-      <div className="bg-white border border-[#E4E1D8] border-l-2 border-l-[#3D5A45] p-5 flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
-          <span className="text-[11px] font-mono text-[#6B6A63] uppercase tracking-wider block">
-            Semantic Topology
-          </span>
-          <h2 className="font-serif text-xl font-semibold text-[#1C1B19] mt-0.5">
-            Interactive Knowledge Graph
-          </h2>
-          <p className="text-xs text-[#6B6A63] mt-1">
-            Visualizing semantic dependencies, extracted concepts, and relational topology.
-          </p>
+      {/* Search & Filter Header */}
+      <div className="bg-[#FFFFFF] border border-[#E4E1D8] rounded-xl p-4 flex flex-col md:flex-row gap-4 items-center justify-between">
+        <div className="relative w-full md:w-80">
+          <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-[#6B6A63]" />
+          <input
+            type="text"
+            placeholder="Search entities or context..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="w-full pl-9 pr-4 py-2 border border-[#E4E1D8] rounded-lg text-xs bg-[#FAFAF8] focus:outline-none focus:border-[#3D5A45]"
+          />
         </div>
 
-        {/* Stats */}
-        {graphData?.stats && (
-          <div className="grid grid-cols-3 gap-3 bg-[#FAFAF8] p-3 rounded border border-[#E4E1D8] text-xs font-mono">
-            <div className="text-center px-2">
-              <span className="text-[10px] text-[#6B6A63] block uppercase">Nodes</span>
-              <span className="text-sm font-semibold text-[#1C1B19]">{graphData.stats.nodeCount}</span>
-            </div>
-            <div className="text-center px-2 border-x border-[#E4E1D8]">
-              <span className="text-[10px] text-[#6B6A63] block uppercase">Edges</span>
-              <span className="text-sm font-semibold text-[#3D5A45]">{graphData.stats.edgeCount}</span>
-            </div>
-            <div className="text-center px-2">
-              <span className="text-[10px] text-[#6B6A63] block uppercase">Density</span>
-              <span className="text-sm font-semibold text-[#8A7E6B]">{graphData.stats.density}</span>
-            </div>
-          </div>
-        )}
+        <div className="flex items-center gap-2 w-full md:w-auto overflow-x-auto">
+          <Filter className="w-4 h-4 text-[#6B6A63]" />
+          <span className="text-xs text-[#6B6A63]">Type:</span>
+          <button
+            onClick={() => setTypeFilter('ALL')}
+            className={`px-2.5 py-1 rounded-md text-xs font-medium border transition-colors ${
+              typeFilter === 'ALL'
+                ? 'bg-[#3D5A45] text-white border-[#3D5A45]'
+                : 'bg-[#FAFAF8] text-[#6B6A63] border-[#E4E1D8] hover:bg-[#F3F2EE]'
+            }`}
+          >
+            All ({nodes.length})
+          </button>
+          {entityTypes.map(type => (
+            <button
+              key={type}
+              onClick={() => setTypeFilter(type)}
+              className={`px-2.5 py-1 rounded-md text-xs font-medium border transition-colors ${
+                typeFilter === type
+                  ? 'bg-[#3D5A45] text-white border-[#3D5A45]'
+                  : 'bg-[#FAFAF8] text-[#6B6A63] border-[#E4E1D8] hover:bg-[#F3F2EE]'
+              }`}
+            >
+              {type}
+            </button>
+          ))}
+        </div>
       </div>
 
-      {/* Main Graph Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-        {/* Graph Canvas Container (3 cols) */}
-        <div className="lg:col-span-3 bg-white border border-[#E4E1D8] p-4 relative min-h-[500px] flex flex-col justify-between">
-          {/* Controls Bar */}
-          <div className="flex flex-col sm:flex-row items-center justify-between gap-3 mb-4 z-10">
-            {/* Search Input */}
-            <div className="relative w-full sm:w-64">
-              <Search className="w-3.5 h-3.5 text-[#6B6A63] absolute left-3 top-3" />
-              <input
-                type="text"
-                placeholder="Search entities..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full bg-[#FAFAF8] border border-[#E4E1D8] rounded pl-8 pr-3 py-1.5 text-xs text-[#1C1B19] placeholder-[#6B6A63] focus:outline-none focus:border-[#3D5A45]"
-              />
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Main Interactive Graph Canvas / Node Grid */}
+        <div className="lg:col-span-2 bg-[#FFFFFF] border border-[#E4E1D8] rounded-xl p-6 space-y-4">
+          <div className="flex items-center justify-between border-b border-[#E4E1D8] pb-3">
+            <div className="flex items-center gap-2">
+              <Network className="w-5 h-5 text-[#3D5A45]" />
+              <h2 className="font-serif font-semibold text-base text-[#1C1B19]">Knowledge Network</h2>
             </div>
-
-            {/* Zoom & Refresh */}
-            <div className="flex items-center space-x-1.5">
-              <button
-                onClick={() => setZoomLevel((z) => Math.min(2, z + 0.2))}
-                className="p-1.5 bg-[#FAFAF8] hover:bg-[#F4F3EE] text-[#1C1B19] border border-[#E4E1D8] rounded text-xs"
-              >
-                <ZoomIn className="w-3.5 h-3.5" />
-              </button>
-              <button
-                onClick={() => setZoomLevel((z) => Math.max(0.5, z - 0.2))}
-                className="p-1.5 bg-[#FAFAF8] hover:bg-[#F4F3EE] text-[#1C1B19] border border-[#E4E1D8] rounded text-xs"
-              >
-                <ZoomOut className="w-3.5 h-3.5" />
-              </button>
-              <button
-                onClick={fetchGraph}
-                className="p-1.5 bg-[#FAFAF8] hover:bg-[#F4F3EE] text-[#1C1B19] border border-[#E4E1D8] rounded text-xs"
-              >
-                <RefreshCw className="w-3.5 h-3.5" />
-              </button>
-            </div>
+            <span className="font-mono text-xs text-[#6B6A63]">
+              Showing {filteredNodes.length} of {nodes.length} concepts
+            </span>
           </div>
 
-          {/* SVG Canvas */}
-          {isLoading ? (
-            <div className="flex-1 flex flex-col items-center justify-center text-[#6B6A63] py-20 text-xs font-mono">
-              <span>Rendering knowledge graph...</span>
-            </div>
-          ) : graphData && graphData.nodes.length > 0 ? (
-            <div className="overflow-hidden border border-[#E4E1D8] bg-[#FAFAF8] flex-1 relative flex items-center justify-center rounded">
-              <svg
-                ref={svgRef}
-                viewBox="0 0 700 560"
-                className="w-full h-[500px] cursor-grab active:cursor-grabbing transition-transform duration-200"
-                style={{ transform: `scale(${zoomLevel})` }}
-              >
-                {/* Render Edges */}
-                {graphData.edges.map((edge) => {
-                  const sourceNode = graphData.nodes.find((n) => n.id === edge.source);
-                  const targetNode = graphData.nodes.find((n) => n.id === edge.target);
+          {/* Graphical Node Cards Visualizer */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-h-[520px] overflow-y-auto pr-1">
+            {filteredNodes.map(node => {
+              const isSelected = selectedNode?.id === node.id;
+              return (
+                <div
+                  key={node.id}
+                  onClick={() => setSelectedNode(node)}
+                  className={`p-3.5 rounded-lg border cursor-pointer transition-all ${
+                    isSelected
+                      ? 'bg-[#EBF2EC] border-[#3D5A45] shadow-sm'
+                      : 'bg-[#FAFAF8] border-[#E4E1D8] hover:border-[#3D5A45] hover:bg-[#F3F2EE]'
+                  }`}
+                >
+                  <div className="flex items-start justify-between gap-2 mb-1.5">
+                    <h3 className="font-serif font-medium text-sm text-[#1C1B19] leading-snug">{node.label}</h3>
+                    <span className={`text-[10px] font-mono px-2 py-0.5 rounded border uppercase ${getTypeBadgeColor(node.type)}`}>
+                      {node.type}
+                    </span>
+                  </div>
 
-                  if (!sourceNode || !targetNode) return null;
+                  <p className="text-xs text-[#6B6A63] line-clamp-2 mb-2 font-sans">
+                    {node.context}
+                  </p>
 
-                  const isSelected =
-                    selectedNode && (sourceNode.id === selectedNode.id || targetNode.id === selectedNode.id);
-
-                  return (
-                    <g key={edge.id}>
-                      <line
-                        x1={sourceNode.x || 350}
-                        y1={sourceNode.y || 280}
-                        x2={targetNode.x || 350}
-                        y2={targetNode.y || 280}
-                        stroke={isSelected ? '#3D5A45' : '#E4E1D8'}
-                        strokeWidth={isSelected ? 2 : 1}
-                        strokeDasharray={edge.relationshipType === 'is_a' ? '4 2' : 'none'}
-                        opacity={isSelected ? 1 : 0.7}
-                      />
-                      <text
-                        x={((sourceNode.x || 350) + (targetNode.x || 350)) / 2}
-                        y={((sourceNode.y || 280) + (targetNode.y || 280)) / 2 - 4}
-                        fill="#6B6A63"
-                        fontSize="9"
-                        textAnchor="middle"
-                        className="pointer-events-none select-none font-mono"
-                      >
-                        {edge.relationshipType}
-                      </text>
-                    </g>
-                  );
-                })}
-
-                {/* Render Nodes */}
-                {graphData.nodes.map((node) => {
-                  const isSelected = selectedNode?.id === node.id;
-                  const isHighlighted =
-                    searchTerm.length > 0 && node.name.toLowerCase().includes(searchTerm.toLowerCase());
-                  const typeColor = entityTypeColors[node.type] || entityTypeColors['CONCEPT'];
-                  const radius = Math.max(14, Math.min(28, 14 + (node.importanceScore || 1) * 3));
-
-                  return (
-                    <g
-                      key={node.id}
-                      onClick={() => handleNodeClick(node)}
-                      className="cursor-pointer transition-transform hover:scale-110"
-                      transform={`translate(${node.x || 350}, ${node.y || 280})`}
-                    >
-                      <circle
-                        r={radius}
-                        fill={typeColor.fill}
-                        stroke={isSelected ? '#1C1B19' : '#FFFFFF'}
-                        strokeWidth={isSelected || isHighlighted ? 2.5 : 1}
-                      />
-                      <text
-                        y={radius + 14}
-                        fill="#1C1B19"
-                        fontSize="11"
-                        fontWeight={isSelected ? 'bold' : 'normal'}
-                        textAnchor="middle"
-                        className="pointer-events-none select-none font-sans"
-                      >
-                        {node.name.length > 18 ? `${node.name.slice(0, 16)}...` : node.name}
-                      </text>
-                    </g>
-                  );
-                })}
-              </svg>
-            </div>
-          ) : (
-            <div className="flex-1 flex flex-col items-center justify-center text-[#6B6A63] py-20 text-xs">
-              <span>No knowledge graph nodes generated yet. Upload content first.</span>
-            </div>
-          )}
+                  <div className="flex items-center justify-between text-[11px] font-mono text-[#6B6A63]">
+                    <span>Importance: {node.importance}</span>
+                    <span className="text-[#3D5A45]">Inspect →</span>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
         </div>
 
-        {/* Selected Entity Inspector Panel (1 col) */}
-        <div className="bg-white border border-[#E4E1D8] border-l-2 border-l-[#3D5A45] p-5 space-y-4">
-          <div className="pb-3 border-b border-[#E4E1D8]">
-            <span className="text-[10px] font-mono text-[#6B6A63] uppercase tracking-wider block">
-              Entity Inspector
-            </span>
-            <h3 className="font-serif text-base font-semibold text-[#1C1B19]">Details & Edges</h3>
-          </div>
+        {/* Sidebar Inspector & Shortest Path Solver */}
+        <div className="space-y-6">
+          {/* Node Inspector Panel */}
+          <div className="bg-[#FFFFFF] border border-[#E4E1D8] rounded-xl p-5 space-y-4">
+            <div className="flex items-center gap-2 border-b border-[#E4E1D8] pb-3">
+              <Info className="w-4 h-4 text-[#3D5A45]" />
+              <h3 className="font-serif font-semibold text-sm text-[#1C1B19]">Entity Inspector</h3>
+            </div>
 
-          {selectedNode ? (
-            <div className="space-y-4 text-xs">
-              <div>
-                <h4 className="font-serif text-base font-semibold text-[#1C1B19]">{selectedNode.name}</h4>
-                <div className="flex items-center space-x-2 mt-1">
-                  <span className="px-2 py-0.5 rounded text-[10px] font-mono bg-[#3D5A45]/10 text-[#3D5A45] border border-[#3D5A45]/20 uppercase">
-                    {selectedNode.type}
-                  </span>
-                  <span className="text-[#6B6A63] font-mono text-[11px]">
-                    Importance: <strong className="text-[#1C1B19]">{selectedNode.importanceScore}</strong>
-                  </span>
+            {selectedNode ? (
+              <div className="space-y-3">
+                <div>
+                  <div className="flex items-center justify-between mb-1">
+                    <h4 className="font-serif font-bold text-base text-[#1C1B19]">{selectedNode.label}</h4>
+                    <span className={`text-[10px] font-mono px-2 py-0.5 rounded border uppercase ${getTypeBadgeColor(selectedNode.type)}`}>
+                      {selectedNode.type}
+                    </span>
+                  </div>
+                  <p className="text-xs text-[#6B6A63] font-mono">Importance Score: {selectedNode.importance}</p>
                 </div>
-              </div>
 
-              {/* Neighbors */}
-              <div>
-                <span className="text-[11px] font-mono text-[#6B6A63] uppercase block mb-1.5">
-                  Connected Neighbors ({nodeContext?.neighbors.length || 0})
-                </span>
-                <div className="space-y-1 max-h-40 overflow-y-auto pr-1">
-                  {nodeContext?.neighbors.map((n) => (
-                    <button
-                      key={n.id}
-                      onClick={() => handleNodeClick(n)}
-                      className="w-full text-left p-2 rounded bg-[#FAFAF8] hover:bg-[#F4F3EE] border border-[#E4E1D8] text-xs text-[#1C1B19] flex items-center justify-between transition-colors"
-                    >
-                      <span className="font-medium">{n.name}</span>
-                      <span className="text-[10px] font-mono text-[#6B6A63]">{n.type}</span>
-                    </button>
-                  ))}
-                  {nodeContext?.neighbors.length === 0 && (
-                    <span className="text-xs text-[#6B6A63] italic block">No direct neighbors found.</span>
+                <div className="bg-[#FAFAF8] border border-[#E4E1D8] p-3 rounded-lg">
+                  <h5 className="text-[11px] font-semibold text-[#1C1B19] uppercase tracking-wider mb-1">Extracted Context</h5>
+                  <p className="text-xs text-[#1C1B19] leading-relaxed font-sans">{selectedNode.context}</p>
+                </div>
+
+                <div>
+                  <h5 className="text-[11px] font-semibold text-[#1C1B19] uppercase tracking-wider mb-2">Connected Relationships ({relatedEdges.length})</h5>
+                  {relatedEdges.length > 0 ? (
+                    <div className="space-y-1.5 max-h-40 overflow-y-auto pr-1">
+                      {relatedEdges.map(edge => (
+                        <div key={edge.id} className="text-xs p-2 bg-[#F3F2EE] rounded border border-[#E4E1D8] font-mono flex items-center justify-between">
+                          <span>{edge.source} <strong className="text-[#3D5A45]">[{edge.relation}]</strong> {edge.target}</span>
+                          <span className="text-[10px] text-[#6B6A63]">{(edge.confidence * 100).toFixed(0)}%</span>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-xs text-[#6B6A63] italic">No direct connections recorded.</p>
                   )}
                 </div>
               </div>
+            ) : (
+              <p className="text-xs text-[#6B6A63] italic py-8 text-center">
+                Click any concept node on the left to view detailed context and network relations.
+              </p>
+            )}
+          </div>
 
-              {/* Relationships */}
-              <div>
-                <span className="text-[11px] font-mono text-[#6B6A63] uppercase block mb-1.5">
-                  Semantic Relations
-                </span>
-                <div className="space-y-1.5 max-h-48 overflow-y-auto text-xs">
-                  {nodeContext?.relationships.map((rel) => (
-                    <div key={rel.id} className="p-2 rounded bg-[#FAFAF8] border border-[#E4E1D8]">
-                      <div className="flex items-center justify-between text-[#1C1B19] font-mono text-[11px] mb-0.5">
-                        <span className="font-semibold">{rel.source}</span>
-                        <span className="px-1.5 py-0.2 bg-[#3D5A45]/10 text-[#3D5A45] rounded text-[10px]">
-                          {rel.relationshipType}
-                        </span>
-                        <span className="font-semibold">{rel.target}</span>
-                      </div>
-                      <div className="text-[10px] text-[#6B6A63] font-mono">
-                        Confidence: {(rel.confidenceScore * 100).toFixed(0)}%
-                      </div>
-                    </div>
-                  ))}
+          {/* NetworkX Shortest Path Finder */}
+          <div className="bg-[#FFFFFF] border border-[#E4E1D8] rounded-xl p-5 space-y-4">
+            <div className="flex items-center gap-2 border-b border-[#E4E1D8] pb-3">
+              <Compass className="w-4 h-4 text-[#3D5A45]" />
+              <h3 className="font-serif font-semibold text-sm text-[#1C1B19]">Shortest Path Finder</h3>
+            </div>
+
+            <div className="space-y-3">
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <label className="text-[11px] font-medium text-[#6B6A63] block mb-1">From Node</label>
+                  <select
+                    value={pathSource}
+                    onChange={(e) => setPathSource(e.target.value)}
+                    className="w-full text-xs p-2 border border-[#E4E1D8] rounded bg-[#FAFAF8]"
+                  >
+                    <option value="">Select source...</option>
+                    {nodes.map(n => <option key={n.id} value={n.id}>{n.label}</option>)}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="text-[11px] font-medium text-[#6B6A63] block mb-1">To Node</label>
+                  <select
+                    value={pathTarget}
+                    onChange={(e) => setPathTarget(e.target.value)}
+                    className="w-full text-xs p-2 border border-[#E4E1D8] rounded bg-[#FAFAF8]"
+                  >
+                    <option value="">Select target...</option>
+                    {nodes.map(n => <option key={n.id} value={n.id}>{n.label}</option>)}
+                  </select>
                 </div>
               </div>
+
+              <button
+                onClick={handleFindPath}
+                disabled={!pathSource || !pathTarget}
+                className="w-full py-2 bg-[#3D5A45] text-white rounded-lg text-xs font-semibold hover:bg-[#2F4736] disabled:bg-[#A3B5A8] transition-colors"
+              >
+                Find Network Path
+              </button>
+
+              {pathResult.length > 0 && (
+                <div className="p-3 bg-[#EBF2EC] border border-[#D2E2D5] rounded-lg">
+                  <span className="text-[11px] font-semibold text-[#3D5A45] block mb-1">Shortest Path Found ({pathResult.length - 1} hops):</span>
+                  <div className="flex items-center flex-wrap gap-1 text-xs font-mono text-[#1C1B19]">
+                    {pathResult.map((step, idx) => (
+                      <React.Fragment key={idx}>
+                        <span className="bg-white px-2 py-0.5 rounded border border-[#D2E2D5]">{step}</span>
+                        {idx < pathResult.length - 1 && <ArrowRight className="w-3 h-3 text-[#3D5A45]" />}
+                      </React.Fragment>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
-          ) : (
-            <div className="text-center text-[#6B6A63] py-12 text-xs font-mono">
-              Click any node in the graph to inspect entity relations.
-            </div>
-          )}
+          </div>
         </div>
       </div>
     </div>

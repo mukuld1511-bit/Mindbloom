@@ -1,23 +1,14 @@
-# Knowledge Graph & Spaced Repetition System
+# Mindbloom
 
-A personal learning notebook application with a local knowledge graph, automated quiz generation, and adaptive spaced repetition (SM-2).
+This contains everything you need to run your app locally.
 
-## Core Capabilities & ML Architecture
+## Run Locally
 
-- **Entity & Relationship Extraction**: Extracts entities using local pattern-and-dictionary matching, no external API calls required.
-- **Keyword Extraction**: Ranks key terms using combined TF-IDF and TextRank graph co-occurrence analysis.
-- **Machine Learning**: Difficulty and performance are predicted by small logistic-regression models trained on your own quiz history via SGD, retrained automatically as you review.
-- **Spaced Repetition**: Schedules flashcard items using the SM-2 algorithm based on recall grades (0–5).
-- **Persistence**: All data persists locally to SQLite.
+**Prerequisites:**  Node.js
 
-## Tech Stack
 
-- **Frontend**: React 18, TypeScript, Tailwind CSS, Recharts, Lucide Icons
-- **Backend**: Express.js, TypeScript (bundled CommonJS server)
-- **Database**: SQLite3 local database
-
-## Development & Production
-
-- **Dev Server**: `npm run dev` (Express + Vite on port 3000)
-- **Build**: `npm run build`
-- **Start**: `npm start`
+1. Install dependencies:
+   `npm install`
+2. Set the `GEMINI_API_KEY` in [.env.local](.env.local) to your Gemini API key
+3. Run the app:
+   `npm run dev`

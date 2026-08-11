@@ -1,110 +1,80 @@
-export type EntityType =
-  | 'PERSON'
-  | 'ORG'
-  | 'PRODUCT'
-  | 'CONCEPT'
-  | 'LOCATION'
-  | 'DATE'
-  | 'TOPIC'
-  | 'PRINCIPLE'
-  | 'METHOD'
-  | 'RESULT';
-
 export interface Entity {
-  id: string;
+  id: number;
+  source_id?: number;
   name: string;
-  type: EntityType;
-  context?: string;
-  importanceScore: number;
-  createdAt: string;
-  userId?: string;
+  type: string; // TOPIC, PRINCIPLE, METHOD, RESULT, CONCEPT, PERSON, ORG, LOCATION
+  context: string;
+  importance: number;
+  created_at?: string;
+}
+
+export interface Relationship {
+  id?: string;
+  source: string;
+  target: string;
+  relation: string; // is_a, causes, part_of, relates_to
+  confidence: number;
 }
 
 export interface GraphNode {
   id: string;
-  name: string;
-  type: EntityType;
-  importanceScore: number;
-  x?: number;
-  y?: number;
+  label: string;
+  type: string;
+  importance: number;
+  context: string;
 }
 
 export interface GraphEdge {
   id: string;
   source: string;
   target: string;
-  relationshipType: 'is_a' | 'causes' | 'part_of' | 'relates_to';
-  confidenceScore: number;
+  relation: string;
+  confidence: number;
 }
 
 export interface KnowledgeGraphData {
   nodes: GraphNode[];
   edges: GraphEdge[];
-  stats: {
-    nodeCount: number;
-    edgeCount: number;
-    density: string;
-  };
 }
 
 export interface Question {
-  id: string;
-  factId: string;
-  entityName: string;
-  questionText: string;
-  type: 'multiple_choice' | 'fill_in_blank' | 'true_false' | 'short_answer';
-  correctAnswer: string;
-  options?: string[];
-  difficultyScore: number;
-  difficultyLabel: 'easy' | 'medium' | 'hard';
-  createdAt: string;
-}
-
-export interface QuizHistoryItem {
-  id: string;
-  userId: string;
-  questionId: string;
-  userAnswer: string;
-  performanceGrade: number; // 0.0 to 1.0
-  reviewInterval: number; // days
-  easinessFactor: number;
-  nextReviewDate: string;
-  createdAt: string;
+  id: number;
+  question_type: 'multiple_choice' | 'fill_in_blank' | 'true_false' | 'short_answer';
+  prompt: string;
+  correct_answer: string;
+  choices: string[];
+  target_entity: string;
+  explanation: string;
+  difficulty: number;
+  repetitions: number;
+  easiness_factor: number;
+  interval_days: number;
+  next_review_date?: string;
 }
 
 export interface Source {
-  id: string;
-  userId: string;
-  url?: string;
+  id: number;
   title: string;
   content: string;
-  factsCount: number;
-  entitiesCount: number;
-  questionsCount: number;
-  createdAt: string;
+  full_content?: string;
+  source_url?: string;
+  created_at?: string;
+  entities_count?: number;
+  questions_count?: number;
 }
 
-export interface Fact {
-  id: string;
-  userId: string;
-  factText: string;
-  sourceId: string;
-  entityId: string;
-  createdAt: string;
+export interface SystemStats {
+  sources_count: number;
+  entities_count: number;
+  relationships_count: number;
+  questions_count: number;
+  due_questions_count: number;
+  graph_nodes: number;
+  graph_edges: number;
+  graph_density: number;
 }
 
-export interface UserStats {
-  accuracyRate: number;
-  masteryPercentage: number;
-  totalEntities: number;
-  totalRelationships: number;
-  totalReviews: number;
-  dueTodayCount: number;
-  streakDays: number;
-}
-
-export interface PerformancePrediction {
-  predictedAccuracy: number;
-  learningCurve: { day: number; predictedRetention: number }[];
-  recommendation: string;
+export interface RetentionProjection {
+  user_avg_performance: number;
+  projections: { day: number; retention: number }[];
 }

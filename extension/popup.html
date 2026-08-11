@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MindBloom</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <div class="popup-container">
+    <header class="header">
+      <div class="brand">
+        <span class="sprout-icon">🌱</span>
+        <h1 class="logo">MindBloom</h1>
+      </div>
+      <a href="options.html" target="_blank" class="gear-btn" title="Settings">⚙️</a>
+    </header>
+
+    <main class="content">
+      <div id="selection-notice" class="selection-badge hidden">
+        <span class="badge-dot"></span> Selected text detected
+      </div>
+
+      <div class="page-meta">
+        <h2 id="page-title" class="page-title">Loading current page...</h2>
+        <p id="page-url" class="page-url">...</p>
+      </div>
+
+      <div id="status-card" class="status-card hidden">
+        <p id="status-text" class="status-text"></p>
+        <div id="result-counts" class="result-counts hidden">
+          <span class="count-pill"><strong id="ent-count">0</strong> Entities</span>
+          <span class="count-pill"><strong id="q-count">0</strong> Questions</span>
+        </div>
+      </div>
+
+      <button id="capture-btn" class="primary-btn">
+        <span id="btn-icon">⚡</span>
+        <span id="btn-text">Send Content to MindBloom</span>
+      </button>
+
+      <div id="unconfigured-warning" class="warning-box hidden">
+        <p>Backend server URL not configured yet.</p>
+        <a href="options.html" target="_blank" class="warning-link">Configure Server Settings →</a>
+      </div>
+    </main>
+
+    <footer class="footer">
+      <a id="open-app-link" href="#" target="_blank" class="app-link">Open MindBloom Notebook ↗</a>
+    </footer>
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html>

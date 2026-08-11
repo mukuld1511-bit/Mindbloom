@@ -1,6 +1,6 @@
 {
-  "name": "ML Knowledge Graph & Spaced Repetition System",
-  "description": "Personal Knowledge Graph and Spaced Repetition System with SQLite persistence, SGD online model training, TF-IDF + TextRank, and SM-2 flashcard reviews.",
+  "name": "MindBloom",
+  "description": "Centralized ML/NLP Knowledge Graph & Spaced Repetition Learning Engine with Chrome Extension",
   "requestFramePermissions": [],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }
