@@ -26,6 +26,7 @@ class Source(Base):
     title = Column(String, index=True)
     content = Column(Text)
     source_url = Column(String, nullable=True)
+    human_summary = Column(Text, nullable=True)
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
 
     entities = relationship("Entity", back_populates="source", cascade="all, delete-orphan")

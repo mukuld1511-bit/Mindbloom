@@ -1,0 +1,38 @@
+/* MindBloom Draw-to-Search Styles */
+
+#mindbloom-draw-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background-color: rgba(0, 0, 0, 0.4); /* Initial dim before drawing */
+  z-index: 2147483646; /* High z-index just below the selection box */
+  cursor: crosshair;
+}
+
+#mindbloom-draw-overlay.drawing-active {
+  background-color: transparent !important; /* Let the box shadow take over */
+}
+
+#mindbloom-draw-box {
+  position: fixed;
+  border: 3px solid rgba(255, 255, 255, 0.9);
+  background-color: transparent;
+  border-radius: 12px;
+  z-index: 2147483647;
+  pointer-events: none; /* Let clicks pass through */
+  /* The massive 9999px shadow dims the entire rest of the screen, leaving the inside transparent! */
+  animation: mindbloom-pulse-glow 1.5s infinite alternate;
+}
+
+@keyframes mindbloom-pulse-glow {
+  0% { 
+    box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.6), 0 0 10px rgba(255, 255, 255, 0.3), inset 0 0 10px rgba(255, 255, 255, 0.1); 
+    border-color: rgba(255, 255, 255, 0.7); 
+  }
+  100% { 
+    box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.6), 0 0 30px rgba(255, 255, 255, 0.8), inset 0 0 20px rgba(255, 255, 255, 0.3); 
+    border-color: rgba(255, 255, 255, 1); 
+  }
+}

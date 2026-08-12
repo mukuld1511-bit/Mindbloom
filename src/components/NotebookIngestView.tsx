@@ -45,10 +45,10 @@ export const NotebookIngestView: React.FC<NotebookIngestViewProps> = ({ sources,
         <div className="border-b border-[#E4E1D8] pb-4">
           <div className="flex items-center gap-2">
             <BookOpen className="w-5 h-5 text-[#3D5A45]" />
-            <h2 className="font-serif font-bold text-lg text-[#1C1B19]">MindBloom Article Ingestion Notebook</h2>
+            <h2 className="font-serif font-bold text-lg text-[#1C1B19]">Capture New Knowledge</h2>
           </div>
           <p className="text-xs text-[#6B6A63] mt-1 font-sans">
-            Paste any article, notes, or paper text below. The local ML engine will execute spaCy NER, scikit-learn TF-IDF & NetworkX TextRank, and generate SM-2 questions.
+            Paste your notes or articles here. Our AI will automatically find the most important concepts, connect them, and create flashcards for you.
           </p>
         </div>
 
@@ -98,7 +98,7 @@ export const NotebookIngestView: React.FC<NotebookIngestViewProps> = ({ sources,
             className="w-full py-3 bg-[#3D5A45] text-white rounded-lg text-xs sm:text-sm font-semibold hover:bg-[#2F4736] disabled:bg-[#A3B5A8] transition-colors flex items-center justify-center gap-2"
           >
             <Sparkles className="w-4 h-4" />
-            <span>{loading ? 'Running Local ML Pipelines...' : 'Ingest & Build Knowledge Graph'}</span>
+            <span>{loading ? 'Analyzing Content...' : 'Analyze & Save to Brain'}</span>
           </button>
         </form>
 
@@ -107,13 +107,13 @@ export const NotebookIngestView: React.FC<NotebookIngestViewProps> = ({ sources,
           <div className="p-4 bg-[#EBF2EC] border border-[#D2E2D5] rounded-lg space-y-2">
             <div className="flex items-center gap-2 font-semibold text-xs text-[#3D5A45]">
               <Check className="w-4 h-4" />
-              <span>Article Processed Successfully!</span>
+              <span>Content Saved Successfully!</span>
             </div>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 font-mono text-xs text-[#1C1B19] pt-2 border-t border-[#D2E2D5]">
-              <div>Keywords: <strong>{lastResult.keywords_count}</strong></div>
-              <div>Entities: <strong>{lastResult.entities_count}</strong></div>
-              <div>Relations: <strong>{lastResult.relationships_count}</strong></div>
-              <div>Questions: <strong>{lastResult.questions_generated}</strong></div>
+              <div>Key Terms: <strong>{lastResult.keywords_count}</strong></div>
+              <div>Concepts: <strong>{lastResult.entities_count}</strong></div>
+              <div>Connections: <strong>{lastResult.relationships_count}</strong></div>
+              <div>Flashcards: <strong>{lastResult.questions_generated}</strong></div>
             </div>
           </div>
         )}
@@ -157,10 +157,32 @@ export const NotebookIngestView: React.FC<NotebookIngestViewProps> = ({ sources,
               </p>
 
               <div className="flex items-center gap-4 text-[11px] font-mono text-[#6B6A63] pt-1">
-                <span>Entities: {src.entities_count ?? 0}</span>
-                <span>Questions: {src.questions_count ?? 0}</span>
-                <span>Created: {src.created_at ? new Date(src.created_at).toLocaleDateString() : 'Today'}</span>
+                <span>Concepts: {src.entities_count ?? 0}</span>
+                <span>Flashcards: {src.questions_count ?? 0}</span>
+                <span>Saved: {src.created_at ? new Date(src.created_at).toLocaleDateString() : 'Today'}</span>
               </div>
+              
+              {src.extracted_concepts && src.extracted_concepts.length > 0 && (
+                <div className="pt-3 border-t border-[#E4E1D8] mt-2">
+                  <span className="text-[10px] font-semibold text-[#6B6A63] block mb-1.5 uppercase tracking-wider">Facts Gathered</span>
+                  <div className="flex flex-wrap gap-1.5">
+                    {src.extracted_concepts.map((concept, idx) => (
+                      <span key={idx} className="px-2 py-0.5 bg-[#EBF2EC] text-[#3D5A45] border border-[#D2E2D5] rounded text-[10px] font-medium">
+                        {concept}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {src.human_summary && (
+                <div className="pt-2 border-t border-[#E4E1D8] mt-2">
+                  <span className="text-[10px] font-semibold text-[#6B6A63] block mb-1 uppercase tracking-wider">Key Takeaways</span>
+                  <p className="text-[11px] text-[#1C1B19] font-sans leading-relaxed bg-[#F3F2EE] p-2 rounded-md border border-[#E4E1D8] whitespace-pre-line">
+                    {src.human_summary}
+                  </p>
+                </div>
+              )}
             </div>
           ))}
         </div>

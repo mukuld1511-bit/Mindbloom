@@ -21,39 +21,27 @@ export const Header: React.FC<HeaderProps> = ({ activeTab, setActiveTab, stats }
             <div>
               <div className="flex items-center gap-2">
                 <h1 className="font-serif text-xl font-bold text-[#1C1B19] tracking-tight">MindBloom</h1>
-                <span className="text-[10px] font-mono font-semibold uppercase px-2 py-0.5 rounded bg-[#EBF2EC] text-[#3D5A45] border border-[#D2E2D5]">
-                  Local ML Engine
+                <span className="text-[10px] font-sans font-semibold uppercase px-2 py-0.5 rounded bg-[#EBF2EC] text-[#3D5A45] border border-[#D2E2D5]">
+                  Smart Notes
                 </span>
               </div>
               <p className="text-xs text-[#6B6A63] font-sans">
-                Centralized Knowledge Graph & SM-2 Spaced Repetition
+                My Idea Network & Study Flashcards
               </p>
             </div>
           </div>
 
-          {/* System Stats Bar */}
+          {/* User Stats Bar */}
           <div className="hidden md:flex items-center gap-4 font-mono text-xs">
             <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-[#F3F2EE] border border-[#E4E1D8]">
               <BookOpen className="w-3.5 h-3.5 text-[#3D5A45]" />
-              <span className="text-[#6B6A63]">Sources:</span>
+              <span className="text-[#6B6A63]">Notes Captured:</span>
               <strong className="text-[#1C1B19]">{stats?.sources_count ?? 0}</strong>
-            </div>
-
-            <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-[#F3F2EE] border border-[#E4E1D8]">
-              <Network className="w-3.5 h-3.5 text-[#3D5A45]" />
-              <span className="text-[#6B6A63]">Nodes:</span>
-              <strong className="text-[#1C1B19]">{stats?.graph_nodes ?? 0}</strong>
-            </div>
-
-            <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-[#F3F2EE] border border-[#E4E1D8]">
-              <Activity className="w-3.5 h-3.5 text-[#3D5A45]" />
-              <span className="text-[#6B6A63]">Density:</span>
-              <strong className="text-[#1C1B19]">{stats?.graph_density ?? 0}</strong>
             </div>
 
             <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-[#EBF2EC] border border-[#D2E2D5] text-[#3D5A45]">
               <BrainCircuit className="w-3.5 h-3.5" />
-              <span>Due Today:</span>
+              <span>Flashcards Due:</span>
               <strong className="font-bold">{stats?.due_questions_count ?? 0}</strong>
             </div>
           </div>
@@ -62,10 +50,10 @@ export const Header: React.FC<HeaderProps> = ({ activeTab, setActiveTab, stats }
         {/* Navigation Tabs */}
         <nav className="flex space-x-1 sm:space-x-4 py-2 overflow-x-auto">
           {[
-            { id: 'graph', label: 'Knowledge Graph', icon: Network },
-            { id: 'quiz', label: 'Spaced Repetition', icon: BrainCircuit, badge: stats?.due_questions_count },
-            { id: 'ingest', label: 'Article Notebook', icon: BookOpen },
-            { id: 'analytics', label: 'Learning Projection', icon: TrendingUp },
+            { id: 'graph', label: 'My Idea Network', icon: Network },
+            { id: 'quiz', label: 'Review Flashcards', icon: BrainCircuit, badge: stats?.due_questions_count },
+            { id: 'ingest', label: 'Capture Knowledge', icon: BookOpen },
+            { id: 'analytics', label: 'My Progress', icon: TrendingUp },
             { id: 'extension', label: 'Chrome Extension', icon: Puzzle }
           ].map((tab) => {
             const Icon = tab.icon;

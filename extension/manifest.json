@@ -23,6 +23,19 @@
     "service_worker": "background.js",
     "type": "module"
   },
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "css": [
+        "content-scripts/selection-popup.css",
+        "content-scripts/draw-to-search.css"
+      ],
+      "js": [
+        "content-scripts/selection-popup.js",
+        "content-scripts/draw-to-search.js"
+      ]
+    }
+  ],
   "options_page": "options.html",
   "icons": {
     "16": "icons/icon16.png",

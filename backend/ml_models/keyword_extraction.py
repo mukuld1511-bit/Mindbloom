@@ -136,3 +136,39 @@ class KeywordExtractor:
 
         combined.sort(key=lambda x: x[1], reverse=True)
         return combined[:top_n]
+
+    def summarize_text(self, text: str, top_n_sentences: int = 3) -> str:
+        """
+        Extractive summarizer: scores sentences based on TF-IDF word importance 
+        and returns the top N sentences in original order.
+        """
+        if not text or len(text.strip()) < 50:
+            return text
+
+        # Split into sentences
+        sentences = re.split(r'(?<=[.!?])\s+', text)
+        if len(sentences) <= top_n_sentences:
+            return text
+
+        tfidf_scores = self._compute_tfidf_scores(text)
+        
+        sent_scores = []
+        for i, sent in enumerate(sentences):
+            tokens = self._tokenize(sent)
+            if not tokens:
+                continue
+            # Score sentence by average importance of its words
+            score = sum(tfidf_scores.get(t, 0.0) for t in tokens) / len(tokens)
+            sent_scores.append((i, score, sent))
+            
+        if not sent_scores:
+            return text
+
+        # Sort by score descending to get top N
+        sent_scores.sort(key=lambda x: x[1], reverse=True)
+        top_sentences = sent_scores[:top_n_sentences]
+        
+        # Re-sort by original index to maintain paragraph flow
+        top_sentences.sort(key=lambda x: x[0])
+        
+        return "\n".join("• " + x[2].strip() for x in top_sentences)

@@ -161,7 +161,9 @@ def get_sources(db: Session = Depends(get_db)):
             "source_url": s.source_url,
             "created_at": s.created_at.isoformat() if s.created_at else None,
             "entities_count": len(s.entities),
-            "questions_count": len(s.questions)
+            "questions_count": len(s.questions),
+            "extracted_concepts": [e.name for e in s.entities][:10],
+            "human_summary": s.human_summary or ""
         }
         for s in sources
     ]

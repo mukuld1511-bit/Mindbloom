@@ -29,7 +29,7 @@ async function startServer() {
   // Attempt to spawn Python Uvicorn backend process
   let pythonRunning = false;
   try {
-    const pyProcess = spawn('python3', ['-m', 'uvicorn', 'backend.app:app', '--host', '127.0.0.1', '--port', '8000'], {
+    const pyProcess = spawn('python', ['-m', 'uvicorn', 'backend.app:app', '--host', '127.0.0.1', '--port', '8000'], {
       cwd: process.cwd(),
       stdio: 'inherit'
     });
@@ -55,11 +55,6 @@ async function startServer() {
 
   // Helper to proxy request to Python FastAPI on port 8000 if available
   const proxyToPython = (req: express.Request, res: express.Response, next: express.NextFunction) => {
-    if (!pythonRunning) {
-      res.status(502).json({ error: 'Python backend is unavailable' });
-      return;
-    }
-
     const options: http.RequestOptions = {
       hostname: '127.0.0.1',
       port: PYTHON_PORT,

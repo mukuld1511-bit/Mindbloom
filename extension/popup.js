@@ -47,6 +47,18 @@ document.addEventListener('DOMContentLoaded', async () => {
   // Bind Capture Button Click
   const captureBtn = document.getElementById('capture-btn');
   captureBtn.addEventListener('click', handleCapture);
+
+  // Bind Area Search Button Click
+  const areaSearchBtn = document.getElementById('area-search-btn');
+  if (areaSearchBtn) {
+    areaSearchBtn.addEventListener('click', async () => {
+      const [activeTab] = await chrome.tabs.query({ active: true, currentWindow: true });
+      if (activeTab) {
+        chrome.tabs.sendMessage(activeTab.id, { type: 'ACTIVATE_DRAW_MODE' });
+        window.close();
+      }
+    });
+  }
 });
 
 async function handleCapture() {

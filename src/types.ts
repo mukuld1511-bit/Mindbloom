@@ -61,6 +61,8 @@ export interface Source {
   created_at?: string;
   entities_count?: number;
   questions_count?: number;
+  extracted_concepts?: string[];
+  human_summary?: string;
 }
 
 export interface SystemStats {
