@@ -1,0 +1,19 @@
+version: '3.8'
+
+services:
+  mindbloom:
+    build: .
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      # Pass any other required env variables here
+      # - GEMINI_API_KEY=${GEMINI_API_KEY}
+    restart: unless-stopped
+    # If you update database.py to save the DB in a separate folder like /app/data,
+    # you can uncomment this volume to persist your knowledge graph across restarts.
+    # volumes:
+    #   - mindbloom-data:/app/data
+
+volumes:
+  mindbloom-data:

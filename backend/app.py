@@ -1,7 +1,11 @@
 import os
+import io
+import zipfile
+from pathlib import Path
 from typing import Optional, List
 from datetime import datetime, timezone
 from fastapi import FastAPI, HTTPException, Depends
+from fastapi.responses import StreamingResponse
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
@@ -80,6 +84,30 @@ def health_check():
         "ml_engine": "spaCy + scikit-learn + NetworkX",
         "timestamp": datetime.now(timezone.utc).isoformat()
     }
+
+
+@app.get("/api/extension/download")
+def download_extension():
+    """Generates a zip file of the Chrome Extension directory on the fly."""
+    extension_dir = Path(__file__).parent.parent / "extension"
+    if not extension_dir.exists():
+        raise HTTPException(status_code=404, detail="Extension directory not found")
+
+    zip_buffer = io.BytesIO()
+    with zipfile.ZipFile(zip_buffer, "w", zipfile.ZIP_DEFLATED) as zip_file:
+        for root, dirs, files in os.walk(extension_dir):
+            for file in files:
+                file_path = os.path.join(root, file)
+                arcname = os.path.relpath(file_path, start=extension_dir)
+                zip_file.write(file_path, arcname)
+
+    zip_buffer.seek(0)
+    
+    return StreamingResponse(
+        zip_buffer,
+        media_type="application/zip",
+        headers={"Content-Disposition": "attachment; filename=mindbloom-extension.zip"}
+    )
 
 
 @app.get("/api/stats")
